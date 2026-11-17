@@ -242,7 +242,7 @@ echo "sdk.dir=/path/to/Android/sdk" > local.properties
 > 本软件基于 YPLUS 热更新框架，作者：Anrays &lt;Anrays-Berry@users.noreply.github.com&gt;
 > 项目地址：<https://github.com/Anrays-Berry/YPLUS_HotPatch>
 
-修改版本请注明「基于 YPLUS 热更新框架修改」，且不得声称原作者对修改版本背书。移除署名即视为违反许可证。完整条款见 [LICENSE](LICENSE) 末尾「附加条款」。
+修改版本请注明「基于 YPLUS 热更新框架修改」，且不得声称原作者对修改版本背书。移除署名即视为违反许可证。完整附加条款见 [NOTICE](NOTICE)。
 
 `Bcore`、`black-reflection`、`compiler` 来自开源项目 **BlackBox**（作者 niunaijun 等，GPL-3.0），`Bcore` 内置的 **Dobby** 遵循 Apache-2.0；第三方组件详见 [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md)。
 
