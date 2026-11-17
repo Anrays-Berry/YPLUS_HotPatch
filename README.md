@@ -22,7 +22,7 @@ YPLUS 热更新框架是一个「宿主 + 沙箱业务」的 Android 应用容�
 核心名词：
 
 - **宿主 Host** —— 真实安装到系统的 `com.anrays.yplus`，权限与系统组件的唯一真实载体。
-- **业务 Business** —— 被装进沙箱运行的 APK（如「源Plus」），可声明 `frame.consumer` 表示自己接管更新。
+- **业务 Business** —— 被装进沙箱运行的 APK（包名不固定，示例统一写作 `com.example.business`），可声明 `frame.consumer` 表示自己接管更新。
 - **沙箱 BlackBox** —— `Bcore` 模块，提供进程 / 包管理 / 权限等虚拟化，使业务在隔离环境内运行。
 - **FrameApi** —— 宿主与业务之间的跨进程能力协议（消费端 → 宿主 `startService` 调用）。
 
@@ -98,10 +98,10 @@ onCreate()
 ```json
 {
   "seed": "20261030-1",
-  "apkUrl": "com.anrays.sourceplus/app/sourceplus-latest.apk",
+  "apkUrl": "com.example.business/app/business-latest.apk",
   "version": "1.1.8",
-  "releaseHtml": "com.anrays.sourceplus/resources/web/info/update.html",
-  "firstRunHtml": "com.anrays.sourceplus/resources/web/info/first.html",
+  "releaseHtml": "com.example.business/resources/web/info/update.html",
+  "firstRunHtml": "com.example.business/resources/web/info/first.html",
   "pushTime": "2026-10-30 09:00",
   "mode": "1"
 }

@@ -27,8 +27,8 @@ object HostBridge {
      */
     fun businessPackage(): String? = BoxRepository.singleInstalledPackage()
 
-    /** 业务的保活前台服务（见 SourcePlus 端 core/KeepAliveService.kt，静默恢复的落脚点）。
-     *  类名在业务包名下，故随包名动态拼 —— 不能再写死 `com.anrays.sourceplus.…`。 */
+    /** 业务的保活前台服务（业务包内约定的类名，静默恢复的落脚点）。
+     *  类名在业务包名下，故随包名动态拼 —— 不能再写死 `com.example.business.…`。 */
     private fun keepAliveService(pkg: String) = "$pkg.core.KeepAliveService"
 
     private const val PREFS = "host_bridge"

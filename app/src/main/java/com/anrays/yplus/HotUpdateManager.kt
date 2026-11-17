@@ -73,10 +73,11 @@ object HotUpdateManager {
     private const val REPO_NAME = "your-business-repo"
     private const val REPO_BRANCH = "master"
 
-    private const val MANIFEST_PATH = "com.anrays.sourceplus/config/update.json"
+    /** 清单在仓库中的相对路径（示例；业务包名不固定，换成你自己的业务包名目录） */
+    private const val MANIFEST_PATH = "com.example.business/config/update.json"
 
-    /** 默认的更新说明页：与源PLUS 更新页同一份 html（`version.releaseHtml` 指向的也是它） */
-    private const val DEFAULT_NOTES_PATH = "com.anrays.sourceplus/resources/web/info/update.html"
+    /** 默认的更新说明页：业务更新页的同一份 html（`version.releaseHtml` 指向的也是它） */
+    private const val DEFAULT_NOTES_PATH = "com.example.business/resources/web/info/update.html"
 
     private const val PREFS = "hot_update"
     private const val KEY_MANIFEST_URL = "manifest_url"
@@ -892,8 +893,8 @@ object HotUpdateManager {
     /**
      * APK 的可读版本号。
      *
-     * 业务包（源PLUS）**故意把 versionName 置空**（见其 build.gradle：118 → 1.1.8 由 versionCode
-     * 逐位换算），直接读 versionName 会得到空串，界面上就变成"更新完成：com.anrays.sourceplus"。
+     * 部分业务包会把 versionName 置空（靠 versionCode 逐位换算展示），直接读 versionName 会得到空串，
+     * 界面上就变成"更新完成：com.example.business"。
      * 这里对齐同一口径：有 versionName 用它，没有就逐位点分。
      */
     @Suppress("DEPRECATION")
@@ -919,7 +920,7 @@ object HotUpdateManager {
     /**
      * `apkUrl` 允许两种写法：
      *   · 完整地址（Gitee 直链 / contents 地址 / 任意 http(s)）—— 原样用；
-     *   · 仓库内相对路径（推荐，如 `com.anrays.sourceplus/resources/app/sourceplus.apk`）—— 按清单所在仓库补全。
+     *   · 仓库内相对路径（推荐，如 `com.example.business/resources/app/business-latest.apk`）—— 按清单所在仓库补全。
      * 用相对路径的好处：换 APK 时只替换那一个文件，update.json 一个字都不用改。
      */
     private fun resolveApkUrl(apkUrl: String, manifestFile: GiteeFile?): String {
@@ -1229,7 +1230,7 @@ object HotUpdateManager {
     // ---------------- 沙箱 ----------------
 
     /**
-     * 当前进程名（`com.anrays.yplus` / `com.anrays.yplus:black` / 沙箱业务的 `com.anrays.sourceplus`）。
+     * 当前进程名（`com.anrays.yplus` / `com.anrays.yplus:black` / 沙箱业务的 `com.example.business`）。
      * 用 /proc 而不是 `Application.getProcessName()`：后者要 API 28，宿主 minSdk 更低。
      */
     private fun currentProcessName(): String? = runCatching {
