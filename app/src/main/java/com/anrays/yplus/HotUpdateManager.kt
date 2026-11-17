@@ -59,9 +59,18 @@ object HotUpdateManager {
     private const val TAG = "HotUpdate"
     const val USER_ID = 0
 
-    /** Gitee 仓库 Anrays/a06（与源PLUS 同一个仓库、同一个包名目录） */
-    private const val REPO_OWNER = "Anrays"
-    private const val REPO_NAME = "a06"
+    /**
+     * 业务包所在的远程仓库（示例占位符，使用前请替换成你自己的仓库）。
+     *
+     *   · REPO_OWNER / REPO_NAME / REPO_BRANCH：Gitee（或其他同形态 API）仓库坐标；
+     *   · MANIFEST_PATH：该仓库里 update.json 的相对路径；
+     *   · 公开仓库无需令牌；私有仓库请给 GITEE_TOKEN 填**只读**令牌。
+     *
+     * 注意：占位符状态下检查会直接失败（拉不到 update.json），属预期行为 ——
+     * 想跑通热更新，三处常量必须换成真实值。
+     */
+    private const val REPO_OWNER = "your-gitee-owner"
+    private const val REPO_NAME = "your-business-repo"
     private const val REPO_BRANCH = "master"
 
     private const val MANIFEST_PATH = "com.anrays.sourceplus/config/update.json"
