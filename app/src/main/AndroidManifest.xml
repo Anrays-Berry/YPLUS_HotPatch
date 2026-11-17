@@ -1,0 +1,478 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-permission
+        android:name="android.permission.QUERY_ALL_PACKAGES"
+        tools:ignore="QueryAllPackagesPermission" />
+
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+
+    <!-- 沙箱内对讲录音用：宿主 UID 必须真实持有 RECORD_AUDIO + 一个 microphone 类型前台服务，
+         Android 14 的 while-in-use 限制才放行后台录音（见 HostMicService）。 -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+
+    <!-- 沙箱内业务（SourcePlus）的设备扫描/连接：系统按**宿主 UID** 校验蓝牙权限，
+         宿主不声明，沙箱里再声明也扫不到设备。宿主 targetSdk=28，
+         Android 12+ 对 targetSdk<=30 仍走旧权限模型 → 关键是有 ACCESS_FINE_LOCATION。 -->
+    <uses-permission android:name="android.permission.BLUETOOTH" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <!-- 车机无 root 时唯一可靠的「自己起来」入口：重启/上电广播（见 HostBootReceiver） -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission
+        android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="29" />
+
+    <!-- ===== 覆盖源plus(SourcePlus) 的完整权限集（宿主是沙箱业务的权限载体，缺一条源plus 就"委屈"） =====
+         参考 SourcePlus/app/src/main/AndroidManifest.xml 的 uses-permission 列表对齐。 -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <!-- 从桌面二次进入时，把已在后台运行的业务（承载它的 BlackBox ProxyActivity task）带回前台。
+         ActivityManager.moveTaskToFront 需要它，未声明会抛 SecurityException。 -->
+    <uses-permission android:name="android.permission.REORDER_TASKS" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+    <uses-permission android:name="android.permission.REQUEST_DELETE_PACKAGES" />
+    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
+    <!-- 源plus 声明的前台服务类型（沙箱内业务起对应 FGS 时按宿主 UID 校验） -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <!-- 源plus 的深层能力：需 adb/系统签名授予；声明但不授予时无害（不涉及 root） -->
+    <uses-permission
+        android:name="android.permission.READ_LOGS"
+        tools:ignore="ProtectedPermissions" />
+    <uses-permission
+        android:name="android.permission.MEDIA_CONTENT_CONTROL"
+        tools:ignore="ProtectedPermissions" />
+    <uses-permission
+        android:name="android.permission.WRITE_SECURE_SETTINGS"
+        tools:ignore="ProtectedPermissions" />
+    <uses-permission
+        android:name="android.permission.MANAGE_EXTERNAL_STORAGE"
+        tools:ignore="ScopedStorage" />
+    <!-- 预留扩展（均为普通权限，便于以后接入定位/保活/网络/振动等能力） -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
+    <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+
+    <!-- ===== 2026-10-30：再补一批「用户点一下就能给」的权限 =====
+         🔴 口径：**只要普通/危险权限**（安装时声明 + 运行时弹框可授），
+            **不要** root / 系统签名 / signature|privileged 那类（车机根本给不了，
+            声明了也永远 denied，只是脏清单）。宿主是沙箱业务的权限载体，
+            业务将来要什么，宿主必须先声明 + 真正拿到。 -->
+    <!-- 蓝牙外设广播（BLE 外设模式 / 信标） -->
+    <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" />
+    <!-- 局域网组播（mDNS / SSDP 发现车机周边设备）—— 原先被误删，加回来 -->
+    <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
+    <!-- Android 13+ 的 Wi-Fi 设备扫描（连热点/无线投屏/直连） -->
+    <uses-permission android:name="android.permission.NEARBY_WIFI_DEVICES" />
+    <!-- 全屏通知（导航提示/来电类强提醒）与免打扰策略 -->
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+    <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY" />
+    <!-- 精确闹钟（定时任务 / 整点播报） -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+    <!-- 引导系统安装器装 APK（宿主自己走沙箱安装，这条是给"交回系统装"的兜底） -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+    <!-- 4G 模块 / SIM 信息（车况上报常用；危险权限，用户可拒） -->
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+    <!-- 后台定位（轨迹/停车位置）：需用户在弹框里选"始终允许" -->
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+    <!-- 图片/视频读取（封面、预览）：Android 13+ 的媒体权限，targetSdk=28 时仍回退到 READ_EXTERNAL_STORAGE -->
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
+    <!-- 前台服务类型（都是普通权限，声明了才能在对应场景常驻不被掐） -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_REMOTE_MESSAGING" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SHORT_SERVICE" />
+
+    <!-- ===== 清理 Bcore 继承来的无用权限（tools:node="remove"，只从合并结果剔除，不动 Bcore 库） =====
+         保留项（INTERNET/BLUETOOTH*/定位/存储/录音/悬浮窗/前台服务/通知/自启/包可见性/4条深层权限/扩展组）
+         一律不在此列表内，避免误删。 -->
+    <!-- 短信 / 电话 / 通话记录 -->
+    <uses-permission android:name="android.permission.SEND_SMS" tools:node="remove" />
+    <uses-permission android:name="android.permission.RECEIVE_SMS" tools:node="remove" />
+    <uses-permission android:name="android.permission.READ_SMS" tools:node="remove" />
+    <uses-permission android:name="android.permission.WRITE_SMS" tools:node="remove" />
+    <uses-permission android:name="android.permission.RECEIVE_MMS" tools:node="remove" />
+    <uses-permission android:name="android.permission.CALL_PHONE" tools:node="remove" />
+    <uses-permission android:name="android.permission.PROCESS_OUTGOING_CALLS" tools:node="remove" />
+    <uses-permission android:name="android.permission.READ_CALL_LOG" tools:node="remove" />
+    <uses-permission android:name="android.permission.WRITE_CALL_LOG" tools:node="remove" />
+    <!-- READ_PHONE_STATE 已改为主清单声明并运行时申请（2026-10-30：车机 4G 模块信息业务要用） -->
+    <uses-permission android:name="android.permission.READ_PHONE_NUMBERS" tools:node="remove" />
+    <uses-permission android:name="android.permission.READ_PRECISE_PHONE_STATE" tools:node="remove" />
+    <uses-permission android:name="android.permission.READ_CELL_BROADCASTS" tools:node="remove" />
+    <uses-permission android:name="android.permission.BROADCAST_SMS" tools:node="remove" />
+    <uses-permission android:name="android.permission.BROADCAST_WAP_PUSH" tools:node="remove" />
+    <uses-permission android:name="android.permission.SEND_RESPOND_VIA_MESSAGE" tools:node="remove" />
+    <uses-permission android:name="android.provider.Telephony.SMS_RECEIVED" tools:node="remove" />
+    <uses-permission android:name="android.permission.BIND_VPN_SERVICE" tools:node="remove" />
+    <!-- 联系人 / 日历 / 账户 -->
+    <uses-permission android:name="android.permission.READ_CONTACTS" tools:node="remove" />
+    <uses-permission android:name="android.permission.WRITE_CONTACTS" tools:node="remove" />
+    <uses-permission android:name="android.permission.READ_CALENDAR" tools:node="remove" />
+    <uses-permission android:name="android.permission.WRITE_CALENDAR" tools:node="remove" />
+    <uses-permission android:name="android.permission.GET_ACCOUNTS" tools:node="remove" />
+    <uses-permission android:name="android.permission.MANAGE_ACCOUNTS" tools:node="remove" />
+    <uses-permission android:name="android.permission.ACCOUNT_MANAGER" tools:node="remove" />
+    <uses-permission android:name="android.permission.AUTHENTICATE_ACCOUNTS" tools:node="remove" />
+    <uses-permission android:name="android.permission.USE_CREDENTIALS" tools:node="remove" />
+    <!-- 后台定位已改为主清单声明（2026-10-30：轨迹/停车位置）；传感器 / 其余媒体清掉 -->
+    <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION" tools:node="remove" />
+    <uses-permission android:name="android.permission.BODY_SENSORS" tools:node="remove" />
+    <uses-permission android:name="android.permission.BODY_SENSORS_BACKGROUND" tools:node="remove" />
+    <uses-permission android:name="android.permission.ACCESS_MEDIA_LOCATION" tools:node="remove" />
+    <!-- READ_MEDIA_IMAGES / READ_MEDIA_VIDEO 已改为主清单声明（2026-10-30：封面/预览） -->
+    <uses-permission android:name="android.permission.READ_MEDIA_VISUAL" tools:node="remove" />
+    <uses-permission android:name="android.permission.READ_MEDIA_AURAL" tools:node="remove" />
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES_USER_SELECTED" tools:node="remove" />
+    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO_USER_SELECTED" tools:node="remove" />
+    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO_USER_SELECTED" tools:node="remove" />
+    <uses-permission android:name="android.permission.READ_MEDIA_VISUAL_USER_SELECTED" tools:node="remove" />
+    <uses-permission android:name="android.permission.READ_MEDIA_AURAL_USER_SELECTED" tools:node="remove" />
+    <uses-permission android:name="android.permission.READ_APP_SPECIFIC_EXTERNAL_STORAGE" tools:node="remove" />
+    <uses-permission android:name="android.permission.WRITE_APP_SPECIFIC_EXTERNAL_STORAGE" tools:node="remove" />
+    <!-- 其它系统级无用权限 -->
+    <uses-permission android:name="android.permission.FLASHLIGHT" tools:node="remove" />
+    <uses-permission android:name="android.permission.ACCESS_LOCATION_EXTRA_COMMANDS" tools:node="remove" />
+    <!-- CHANGE_WIFI_MULTICAST_STATE 已改为主清单声明（2026-10-30：局域网设备发现） -->
+    <uses-permission android:name="android.permission.MOUNT_UNMOUNT_FILESYSTEMS" tools:node="remove" />
+    <uses-permission android:name="android.permission.BATTERY_STATS" tools:node="remove" />
+    <uses-permission android:name="android.permission.BROADCAST_STICKY" tools:node="remove" />
+    <uses-permission android:name="android.permission.DISABLE_KEYGUARD" tools:node="remove" />
+    <uses-permission android:name="android.permission.EXPAND_STATUS_BAR" tools:node="remove" />
+    <uses-permission android:name="android.permission.CHANGE_CONFIGURATION" tools:node="remove" />
+    <uses-permission android:name="android.permission.WRITE_SETTINGS" tools:node="remove" />
+    <uses-permission android:name="android.permission.GET_TASKS" tools:node="remove" />
+    <uses-permission android:name="android.permission.KILL_BACKGROUND_PROCESSES" tools:node="remove" />
+    <!-- REORDER_TASKS 必须保留（moveTaskToFront 把业务带回前台），别再加 tools:node="remove" -->
+    <uses-permission android:name="android.permission.PERSISTENT_ACTIVITY" tools:node="remove" />
+    <uses-permission android:name="android.permission.NFC" tools:node="remove" />
+    <uses-permission android:name="android.hardware.usb.host" tools:node="remove" />
+    <uses-permission android:name="android.permission.USE_FINGERPRINT" tools:node="remove" />
+    <uses-permission android:name="android.permission.READ_HISTORY_BOOKMARKS" tools:node="remove" />
+    <uses-permission android:name="android.permission.WRITE_HISTORY_BOOKMARKS" tools:node="remove" />
+    <uses-permission android:name="android.permission.CLEAR_APP_CACHE" tools:node="remove" />
+    <uses-permission android:name="android.permission.GET_PACKAGE_SIZE" tools:node="remove" />
+    <uses-permission android:name="android.permission.WRITE_SYNC_SETTINGS" tools:node="remove" />
+    <uses-permission android:name="android.permission.READ_SYNC_SETTINGS" tools:node="remove" />
+    <uses-permission android:name="android.permission.READ_SYNC_STATS" tools:node="remove" />
+    <uses-permission android:name="android.permission.SUBSCRIBED_FEEDS_READ" tools:node="remove" />
+    <uses-permission android:name="android.permission.SUBSCRIBED_FEEDS_WRITE" tools:node="remove" />
+    <uses-permission android:name="android.permission.RESTART_PACKAGES" tools:node="remove" />
+    <uses-permission android:name="android.permission.SET_TIME" tools:node="remove" />
+    <uses-permission android:name="android.permission.SET_TIME_ZONE" tools:node="remove" />
+    <uses-permission android:name="android.permission.SET_WALLPAPER" tools:node="remove" />
+    <uses-permission android:name="android.permission.SET_WALLPAPER_HINTS" tools:node="remove" />
+    <uses-permission android:name="android.permission.TRANSMIT_IR" tools:node="remove" />
+    <uses-permission android:name="android.permission.USE_SIP" tools:node="remove" />
+    <uses-permission android:name="android.permission.SYSTEM_OVERLAY_WINDOW" tools:node="remove" />
+    <uses-permission android:name="android.permission.GET_INTENT_SENDER_INTENT" tools:node="remove" />
+    <uses-permission android:name="android.permission.BIND_DIRECTORY_SEARCH" tools:node="remove" />
+    <uses-permission android:name="android.permission.UPDATE_APP_OPS_STATS" tools:node="remove" />
+    <uses-permission android:name="android.permission.INSTALL_PACKAGES" tools:node="remove" />
+    <uses-permission android:name="android.permission.DELETE_PACKAGES" tools:node="remove" />
+    <uses-permission android:name="android.permission.CLEAR_APP_USER_DATA" tools:node="remove" />
+    <uses-permission android:name="android.permission.WRITE_MEDIA_STORAGE" tools:node="remove" />
+    <uses-permission android:name="android.permission.ACCESS_CACHE_FILESYSTEM" tools:node="remove" />
+    <uses-permission android:name="android.permission.DEVICE_POWER" tools:node="remove" />
+    <uses-permission android:name="android.permission.INTERACT_ACROSS_USERS" tools:node="remove" />
+    <uses-permission android:name="android.permission.INTERACT_ACROSS_USERS_FULL" tools:node="remove" />
+    <uses-permission android:name="android.permission.BIND_APPWIDGET" tools:node="remove" />
+    <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS" tools:node="remove" />
+    <uses-permission android:name="android.permission.READ_INSTALL_SESSIONS" tools:node="remove" />
+    <uses-permission android:name="android.permission.READ_OWNER_DATA" tools:node="remove" />
+    <uses-permission android:name="android.permission.WRITE_OWNER_DATA" tools:node="remove" />
+    <uses-permission android:name="android.permission.WRITE_CLIPS" tools:node="remove" />
+    <uses-permission android:name="android.permission.READ_CLIPS" tools:node="remove" />
+    <uses-permission android:name="android.permission.GET_CLIPS" tools:node="remove" />
+    <uses-permission android:name="android.permission.ACCESS_GPS" tools:node="remove" />
+    <uses-permission android:name="android.permission.ACCESS_WIMAX_STATE" tools:node="remove" />
+    <uses-permission android:name="android.permission.ACCESS_DOWNLOAD_MANAGER" tools:node="remove" />
+    <uses-permission android:name="android.permission.CHANGE_WIMAX_STATE" tools:node="remove" />
+    <uses-permission android:name="android.permission.DOWNLOAD_WITHOUT_NOTIFICATION" tools:node="remove" />
+    <uses-permission android:name="android.permission.READ_DEVICE_CONFIG" tools:node="remove" />
+    <uses-permission android:name="android.permission.HARDWARE_TEST" tools:node="remove" />
+    <uses-permission android:name="android.permission.READ_APP_BADGE" tools:node="remove" />
+    <uses-permission android:name="android.permission.QUERY_ADVANCED_PROTECTION_MODE" tools:node="remove" />
+    <!-- 伪权限：Google GMS / Talk / C2DM / GSF / Billing -->
+    <uses-permission android:name="com.google.android.c2dm.permission.RECEIVE" tools:node="remove" />
+    <uses-permission android:name="com.google.android.providers.gsf.permission.READ_GSERVICES" tools:node="remove" />
+    <uses-permission android:name="com.android.vending.BILLING" tools:node="remove" />
+    <uses-permission android:name="com.android.vending.CHECK_LICENSE" tools:node="remove" />
+    <uses-permission android:name="com.google.android.providers.talk.permission.READ_ONLY" tools:node="remove" />
+    <uses-permission android:name="com.google.android.providers.talk.permission.WRITE_ONLY" tools:node="remove" />
+    <uses-permission android:name="com.google.android.gms.permission.ACTIVITY_RECOGNITION" tools:node="remove" />
+    <uses-permission android:name="com.google.android.gms.permission.AD_ID_NOTIFICATION" tools:node="remove" />
+    <uses-permission android:name="com.google.android.gms.permission.ACCESS_FINE_LOCATION" tools:node="remove" />
+    <uses-permission android:name="com.google.android.gms.permission.ACCESS_COARSE_LOCATION" tools:node="remove" />
+    <uses-permission android:name="com.google.android.gms.permission.ACCESS_BACKGROUND_LOCATION" tools:node="remove" />
+    <uses-permission android:name="com.google.android.gms.permission.CAMERA" tools:node="remove" />
+    <uses-permission android:name="com.google.android.gms.permission.RECORD_AUDIO" tools:node="remove" />
+    <uses-permission android:name="com.google.android.gms.permission.READ_PHONE_STATE" tools:node="remove" />
+    <uses-permission android:name="com.google.android.gms.permission.READ_PHONE_NUMBERS" tools:node="remove" />
+    <uses-permission android:name="com.google.android.gms.permission.READ_CALL_LOG" tools:node="remove" />
+    <uses-permission android:name="com.google.android.gms.permission.WRITE_CALL_LOG" tools:node="remove" />
+    <uses-permission android:name="com.google.android.gms.permission.READ_CONTACTS" tools:node="remove" />
+    <uses-permission android:name="com.google.android.gms.permission.WRITE_CONTACTS" tools:node="remove" />
+    <uses-permission android:name="com.google.android.gms.permission.READ_CALENDAR" tools:node="remove" />
+    <uses-permission android:name="com.google.android.gms.permission.WRITE_CALENDAR" tools:node="remove" />
+    <uses-permission android:name="com.google.android.gms.permission.READ_EXTERNAL_STORAGE" tools:node="remove" />
+    <uses-permission android:name="com.google.android.gms.permission.WRITE_EXTERNAL_STORAGE" tools:node="remove" />
+    <uses-permission android:name="com.google.android.gms.permission.READ_MEDIA_IMAGES" tools:node="remove" />
+    <uses-permission android:name="com.google.android.gms.permission.READ_MEDIA_VIDEO" tools:node="remove" />
+    <uses-permission android:name="com.google.android.gms.permission.READ_MEDIA_AUDIO" tools:node="remove" />
+    <uses-permission android:name="com.google.android.gms.permission.BODY_SENSORS" tools:node="remove" />
+    <uses-permission android:name="com.google.android.gms.permission.BODY_SENSORS_BACKGROUND" tools:node="remove" />
+    <uses-permission android:name="com.google.android.gms.permission.BLUETOOTH_SCAN" tools:node="remove" />
+    <uses-permission android:name="com.google.android.gms.permission.BLUETOOTH_CONNECT" tools:node="remove" />
+    <uses-permission android:name="com.google.android.gms.permission.BLUETOOTH_ADVERTISE" tools:node="remove" />
+    <uses-permission android:name="com.google.android.gms.permission.NEARBY_WIFI_DEVICES" tools:node="remove" />
+    <uses-permission android:name="com.google.android.gms.permission.POST_NOTIFICATIONS" tools:node="remove" />
+    <uses-permission android:name="com.google.android.gms.permission.ACCESS_MEDIA_LOCATION" tools:node="remove" />
+    <uses-permission android:name="com.google.android.gms.permission.READ_PRECISE_PHONE_STATE" tools:node="remove" />
+    <uses-permission android:name="com.google.android.gms.permission.READ_DEVICE_CONFIG" tools:node="remove" />
+    <uses-permission android:name="com.google.android.gms.permission.READ_APP_SPECIFIC_EXTERNAL_STORAGE" tools:node="remove" />
+    <uses-permission android:name="com.google.android.gms.permission.WRITE_APP_SPECIFIC_EXTERNAL_STORAGE" tools:node="remove" />
+    <uses-permission android:name="com.google.android.gms.permission.MANAGE_EXTERNAL_STORAGE" tools:node="remove" />
+    <uses-permission android:name="com.google.android.gms.permission.WAKE_LOCK" tools:node="remove" />
+    <uses-permission android:name="com.google.android.gms.permission.VIBRATE" tools:node="remove" />
+    <uses-permission android:name="com.google.android.gms.permission.INTERNET" tools:node="remove" />
+    <uses-permission android:name="com.google.android.gms.permission.ACCESS_NETWORK_STATE" tools:node="remove" />
+    <uses-permission android:name="com.google.android.gms.permission.ACCESS_WIFI_STATE" tools:node="remove" />
+    <uses-permission android:name="com.google.android.gms.permission.CHANGE_WIFI_STATE" tools:node="remove" />
+    <uses-permission android:name="com.google.android.gms.permission.CHANGE_NETWORK_STATE" tools:node="remove" />
+    <uses-permission android:name="com.google.android.gms.permission.FOREGROUND_SERVICE" tools:node="remove" />
+    <uses-permission android:name="com.google.android.gms.permission.FOREGROUND_SERVICE_LOCATION" tools:node="remove" />
+    <uses-permission android:name="com.google.android.gms.permission.FOREGROUND_SERVICE_MICROPHONE" tools:node="remove" />
+    <uses-permission android:name="com.google.android.gms.permission.FOREGROUND_SERVICE_CAMERA" tools:node="remove" />
+    <uses-permission android:name="com.google.android.gms.permission.FOREGROUND_SERVICE_PHONE_CALL" tools:node="remove" />
+    <uses-permission android:name="com.google.android.gms.permission.FOREGROUND_SERVICE_SYSTEM_EXEMPTED" tools:node="remove" />
+    <uses-permission android:name="com.google.android.gms.permission.FOREGROUND_SERVICE_SPECIAL_USE" tools:node="remove" />
+    <uses-permission android:name="com.google.android.gms.permission.FOREGROUND_SERVICE_HEALTH" tools:node="remove" />
+    <uses-permission android:name="com.google.android.gms.permission.FOREGROUND_SERVICE_DATA_SYNC" tools:node="remove" />
+    <uses-permission android:name="com.google.android.gms.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" tools:node="remove" />
+    <uses-permission android:name="com.google.android.gms.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" tools:node="remove" />
+    <uses-permission android:name="com.google.android.gms.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" tools:node="remove" />
+    <!-- 伪权限：三星 / 华为 / 各家桌面角标 / social-profile -->
+    <uses-permission android:name="android.permission.WRITE_SOCIAL_STREAM" tools:node="remove" />
+    <uses-permission android:name="android.permission.READ_SOCIAL_STREAM" tools:node="remove" />
+    <uses-permission android:name="android.permission.READ_PROFILE" tools:node="remove" />
+    <uses-permission android:name="android.permission.WRITE_PROFILE" tools:node="remove" />
+    <uses-permission android:name="android.permission.READ_USER_DICTIONARY" tools:node="remove" />
+    <uses-permission android:name="android.permission.WRITE_USER_DICTIONARY" tools:node="remove" />
+    <uses-permission android:name="com.samsung.svoice.sync.READ_DATABASE" tools:node="remove" />
+    <uses-permission android:name="com.samsung.svoice.sync.ACCESS_SERVICE" tools:node="remove" />
+    <uses-permission android:name="com.samsung.svoice.sync.WRITE_DATABASE" tools:node="remove" />
+    <uses-permission android:name="com.sec.android.app.voicenote.Controller" tools:node="remove" />
+    <uses-permission android:name="com.sec.android.permission.VOIP_INTERFACE" tools:node="remove" />
+    <uses-permission android:name="com.sec.android.permission.LAUNCH_PERSONAL_PAGE_SERVICE" tools:node="remove" />
+    <uses-permission android:name="com.samsung.android.providers.context.permission.WRITE_USE_APP_FEATURE_SURVEY" tools:node="remove" />
+    <uses-permission android:name="com.samsung.android.providers.context.permission.READ_RECORD_AUDIO" tools:node="remove" />
+    <uses-permission android:name="com.samsung.android.providers.context.permission.WRITE_RECORD_AUDIO" tools:node="remove" />
+    <uses-permission android:name="com.sec.android.settings.permission.SOFT_RESET" tools:node="remove" />
+    <uses-permission android:name="sec.android.permission.READ_MSG_PREF" tools:node="remove" />
+    <uses-permission android:name="com.samsung.android.scloud.backup.lib.read" tools:node="remove" />
+    <uses-permission android:name="com.samsung.android.scloud.backup.lib.write" tools:node="remove" />
+    <uses-permission android:name="com.android.alarm.permission.SET_ALARM" tools:node="remove" />
+    <uses-permission android:name="com.android.voicemail.permission.ADD_VOICEMAIL" tools:node="remove" />
+    <uses-permission android:name="com.android.voicemail.permission.READ_WRITE_ALL_VOICEMAIL" tools:node="remove" />
+    <uses-permission android:name="com.huawei.authentication.HW_ACCESS_AUTH_SERVICE" tools:node="remove" />
+    <uses-permission android:name="com.android.launcher.permission.INSTALL_SHORTCUT" tools:node="remove" />
+    <uses-permission android:name="com.android.launcher.permission.UNINSTALL_SHORTCUT" tools:node="remove" />
+    <uses-permission android:name="com.android.launcher.permission.READ_SETTINGS" tools:node="remove" />
+    <uses-permission android:name="com.android.launcher.permission.WRITE_SETTINGS" tools:node="remove" />
+    <uses-permission android:name="com.android.launcher2.permission.READ_SETTINGS" tools:node="remove" />
+    <uses-permission android:name="com.android.launcher3.permission.READ_SETTINGS" tools:node="remove" />
+    <uses-permission android:name="com.google.android.launcher.permission.READ_SETTINGS" tools:node="remove" />
+    <uses-permission android:name="com.oppo.launcher.permission.READ_SETTINGS" tools:node="remove" />
+    <uses-permission android:name="com.oppo.launcher.permission.WRITE_SETTINGS" tools:node="remove" />
+    <uses-permission android:name="me.everything.badger.permission.BADGE_COUNT_READ" tools:node="remove" />
+    <uses-permission android:name="me.everything.badger.permission.BADGE_COUNT_WRITE" tools:node="remove" />
+    <uses-permission android:name="com.sec.android.provider.badge.permission.READ" tools:node="remove" />
+    <uses-permission android:name="com.sec.android.provider.badge.permission.WRITE" tools:node="remove" />
+    <uses-permission android:name="com.htc.launcher.permission.READ_SETTINGS" tools:node="remove" />
+    <uses-permission android:name="com.htc.launcher.permission.UPDATE_SHORTCUT" tools:node="remove" />
+    <uses-permission android:name="com.sonyericsson.home.permission.BROADCAST_BADGE" tools:node="remove" />
+    <uses-permission android:name="com.sonymobile.home.permission.PROVIDER_INSERT_BADGE" tools:node="remove" />
+    <uses-permission android:name="com.anddoes.launcher.permission.UPDATE_COUNT" tools:node="remove" />
+    <uses-permission android:name="com.anddoes.launcher.permission.READ_SETTINGS" tools:node="remove" />
+    <uses-permission android:name="com.majeur.launcher.permission.UPDATE_BADGE" tools:node="remove" />
+    <uses-permission android:name="com.huawei.android.launcher.permission.CHANGE_BADGE" tools:node="remove" />
+    <uses-permission android:name="com.huawei.android.launcher.permission.READ_SETTINGS" tools:node="remove" />
+    <uses-permission android:name="com.huawei.android.launcher.permission.WRITE_SETTINGS" tools:node="remove" />
+    <uses-permission android:name="com.teslacoilsw.launcher.permission.READ_SETTINGS" tools:node="remove" />
+    <uses-permission android:name="com.actionlauncher.playstore.permission.READ_SETTINGS" tools:node="remove" />
+    <uses-permission android:name="com.mx.launcher.permission.READ_SETTINGS" tools:node="remove" />
+    <uses-permission android:name="com.apusapps.launcher.permission.READ_SETTINGS" tools:node="remove" />
+    <uses-permission android:name="com.tsf.shell.permission.READ_SETTINGS" tools:node="remove" />
+    <uses-permission android:name="com.lenovo.launcher.permission.READ_SETTINGS" tools:node="remove" />
+    <uses-permission android:name="com.bbk.launcher2.permission.READ_SETTINGS" tools:node="remove" />
+    <uses-permission android:name="com.s.launcher.permission.READ_SETTINGS" tools:node="remove" />
+    <uses-permission android:name="cn.nubia.launcher.permission.READ_SETTINGS" tools:node="remove" />
+    <uses-permission android:name="com.android.browser.permission.READ_HISTORY_BOOKMARKS" tools:node="remove" />
+    <uses-permission android:name="com.android.browser.permission.WRITE_HISTORY_BOOKMARKS" tools:node="remove" />
+
+    <application
+        android:name=".CarBoxApp"
+        android:allowBackup="false"
+        android:icon="@drawable/ic_launcher_box"
+        android:label="@string/app_name"
+        android:largeHeap="true"
+        android:roundIcon="@drawable/ic_launcher_box"
+        android:supportsRtl="true"
+        android:usesCleartextTraffic="true"
+        android:theme="@style/Theme.CarBox"
+        tools:targetApi="n">
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:configChanges="density|smallestScreenSize|screenSize|uiMode|screenLayout|orientation|navigation|keyboardHidden">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+            <!-- 文件管理器里点击 APK 时可直接用宿主安装 -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data
+                    android:mimeType="application/vnd.android.package-archive"
+                    android:scheme="content" />
+            </intent-filter>
+        </activity>
+
+        <!-- 更新内容窗口：从顶部提示条点进来，显示版本信息 + 更新说明 html + 「立即更新」。
+             exported=false：只由宿主自己（提示条 / BlackBox后台「更新应用」）拉起。 -->
+        <activity
+            android:name=".UpdateActivity"
+            android:configChanges="density|smallestScreenSize|screenSize|uiMode|screenLayout|orientation|navigation|keyboardHidden"
+            android:exported="false"
+            android:launchMode="singleTop" />
+
+        <!-- 宿主通知监听：系统只绑定真实安装的宿主组件（沙箱里的虚拟 app 组件不认识）。
+             用途：系统重绑时拉起沙箱里的业务 APK（保活复活），并把通知事件交给 HostBridge。
+             exported=true：部分车机 ROM 的通知使用权列表只显示 exported=true 的服务。 -->
+        <service
+            android:name=".HostNotificationListener"
+            android:exported="true"
+            android:label="源Plus 通知服务"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
+
+        <!-- 宿主无障碍服务：系统只绑定真实安装的宿主组件，沙箱业务的 AccessibilityService
+             绑不上（"边缘手势"那套 performGlobalAction 在盒子里会失效）。
+             业务经 FrameApi 的 access.perform 发命令，由这里代执行。
+             exported=true + BIND_ACCESSIBILITY_SERVICE：系统绑定无障碍服务的必要条件。
+             ⚠️ 需要在系统「无障碍」里手动开启一次（宿主 MainActivity 有入口跳转）。 -->
+        <service
+            android:name=".HostAccessibilityService"
+            android:exported="true"
+            android:label="源Plus 辅助服务"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/host_accessibility_config" />
+        </service>
+
+        <!-- 调试用安装通道（adb 直接把 APK 推进沙箱，不用点界面）。
+             exported=true：adb 只能显式发广播（-n 指定组件），这样 shell 才能送到。
+             代码里还有一道闸：非 debug 构建直接 return，release 不生效。 -->
+        <receiver
+            android:name=".HostInstallReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.anrays.yplus.action.INSTALL" />
+                <action android:name="com.anrays.yplus.action.SET_ROOT" />
+            </intent-filter>
+        </receiver>
+
+        <!-- 宿主的麦克风前台服务占位：沙箱内虚拟 app 与宿主同 UID，系统按 UID 判断
+             "有没有 microphone FGS"，复活后要有它后台录音才不被静音。
+             exported=false：shell 起不来，但 root 脚本的 am 能起（实测通过）。 -->
+        <service
+            android:name=".HostMicService"
+            android:exported="false"
+            android:foregroundServiceType="microphone" />
+
+        <!-- 开机/上电自启（车机无 root 时唯一可靠入口）。
+             🔴 事件表**逐条对齐源PLUS**（SourcePlus 的 core/AppBootReceiver）：
+                宿主只是它的载体，源PLUS 能靠这些广播起来，宿主就必须能靠同样的广播起来，
+                否则盒子自己起不来、源PLUS 再能自启也没用。 -->
+        <receiver
+            android:name=".HostBootReceiver"
+            android:directBootAware="true"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter android:priority="1000">
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.LOCKED_BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+                <action android:name="com.htc.intent.action.QUICKBOOT_POWERON" />
+                <action android:name="android.intent.action.REBOOT" />
+                <action android:name="android.intent.action.USER_PRESENT" />
+                <action android:name="android.intent.action.ACTION_POWER_CONNECTED" />
+                <action android:name="ecarx.intent.action.power.STRMODE" />
+                <action android:name="ecarx.intent.action.DISPLAY_ON" />
+                <action android:name="android.intent.action.SCREEN_ON" />
+                <action android:name="android.bluetooth.adapter.action.STATE_CHANGED" />
+                <action android:name="android.bluetooth.adapter.action.CONNECTION_STATE_CHANGED" />
+                <action android:name="android.bluetooth.device.action.ACL_CONNECTED" />
+                <action android:name="com.ecarx.intent.action.SYSTEM_READY" />
+                <action android:name="com.ecarx.intent.action.ACC_ON" />
+                <action android:name="com.ecarx.intent.action.IGN_ON" />
+                <action android:name="com.ecarx.intent.action.WAKEUP" />
+                <action android:name="com.ecarx.intent.action.STR_RESUME" />
+                <action android:name="com.ecarx.intent.action.POWER_ON" />
+                <action android:name="com.ecarx.systemui.SYSTEM_UI_READY" />
+                <action android:name="com.lynkco.intent.action.SYSTEM_READY" />
+                <action android:name="com.lynkco.intent.action.WAKEUP" />
+                <action android:name="com.lynkco.intent.action.STR_RESUME" />
+                <action android:name="com.geely.intent.action.SYSTEM_READY" />
+                <action android:name="com.geely.intent.action.WAKEUP" />
+                <action android:name="com.byd.action.ACC_ON" />
+                <action android:name="com.byd.action.POWER_ON" />
+                <action android:name="ecarx.xsf.mediacenter.action.BROADCAST_MEDIA_CENTER" />
+            </intent-filter>
+        </receiver>
+
+        <!-- 沙箱业务（源PLUS）→ 宿主的「立即更新」入口：业务在虚拟环境里 startService 到宿主
+             真实组件（BlackBox 对真实包直接放行给系统 AMS），宿主据此下载 + 沙箱安装 + 回推进度。
+             exported=false：调用方是沙箱业务（与宿主同 UID）。 -->
+        <service
+            android:name=".FrameUpdateHostService"
+            android:exported="false" />
+
+        <!-- root 守护脚本的拉活落点（见 HostKeepAlive / ReviveReceiver）：
+             force-stop 后由脚本发显式广播唤醒进程，不创建 Activity，宿主不会跳到前台。
+             exported=true 是必须的：调用方是 shell/root；显式广播不需要 intent-filter。 -->
+        <receiver
+            android:name=".ReviveReceiver"
+            android:exported="true" />
+    </application>
+</manifest>

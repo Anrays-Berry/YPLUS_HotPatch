@@ -1,0 +1,17 @@
+
+plugins {
+    alias(libs.plugins.android.application) apply false
+    alias(libs.plugins.jetbrains.kotlin.android) apply false
+    alias(libs.plugins.android.library) apply false
+}
+
+ext {
+    compileSdkVersion = 35
+    // 虚拟化框架依赖 targetSdk <= 28 的旧行为（外部存储、后台启动 Activity 等）
+    targetSdkVersion = 28
+
+    minSdk = 23
+    versionCode = 1
+    versionName = "1.0.0"
+    hiddenApiBypass = '4.3'
+}

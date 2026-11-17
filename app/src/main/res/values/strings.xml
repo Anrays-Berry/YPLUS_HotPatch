@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">源PLUS</string>
+    <!-- 后台管理界面的标题（一般人看不到，用户 2026-10-28 定名） -->
+    <string name="title">BlackBox后台</string>
+    <string name="subtitle">沙箱应用 · 免安装运行</string>
+    <string name="app_count">共 %1$d 个应用</string>
+
+    <string name="btn_import">安装 APK</string>
+    <string name="btn_clone">本机应用</string>
+    <string name="btn_refresh">刷新</string>
+
+    <string name="empty_title">还没有沙箱应用</string>
+    <string name="empty_desc">点「安装 APK」导入本地安装包，或点「本机应用」克隆已装应用</string>
+
+    <string name="installing">正在安装…</string>
+    <string name="uninstalling">正在卸载…</string>
+    <string name="loading_device_apps">正在读取本机应用…</string>
+
+    <string name="install_ok">安装成功</string>
+    <string name="install_fail">安装失败：%1$s</string>
+    <string name="uninstall_ok">已卸载</string>
+    <string name="uninstall_fail">卸载失败：%1$s</string>
+    <string name="clear_ok">数据已清除</string>
+    <string name="clear_fail">清除失败：%1$s</string>
+    <string name="launch_fail">%1$s 启动失败</string>
+
+    <string name="action_launch">启动</string>
+    <string name="action_clear_data">清除数据</string>
+    <string name="action_uninstall">卸载</string>
+    <string name="uninstall_confirm">确定要从沙箱中卸载「%1$s」吗？应用数据会一并删除。</string>
+    <string name="confirm">确定</string>
+
+    <string name="clone_title">选择要克隆的本机应用</string>
+    <string name="no_device_apps">没有可克隆的应用</string>
+    <string name="no_file_picker">没有检测到文件选择器，请先安装一个文件管理器</string>
+
+    <string name="btn_update">更新应用</string>
+    <!-- 「安装应用」：合并了原「安装 APK」与「更新应用」，功能同更新应用（2026-10-30） -->
+    <string name="btn_install">安装应用</string>
+    <!-- 后台界面里的高亮按钮：只在有可用更新时显示，点击进更新页（2026-10-30） -->
+    <string name="btn_update_now">立即更新</string>
+    <string name="update_none_tip">当前没有可用更新</string>
+    <string name="update_title">更新应用</string>
+    <!-- 「更新应用」的来源（用户 2026-10-28 指定；同日追加「同步线上版本」） -->
+    <string name="update_src_online">同步线上版本（Gitee 最新）</string>
+    <string name="update_src_scan">扫描本地 APK 文件</string>
+    <string name="update_src_pick">选择文件导入</string>
+    <string name="update_src_url">输入下载链接（Gitee / 外站）</string>
+    <string name="update_scanning">正在扫描本地 APK…</string>
+    <string name="update_scan_empty">没有找到本地 APK，请用「选择文件」或下载链接</string>
+    <string name="update_scan_no_permission">没有存储读取权限，无法扫描本地 APK</string>
+    <string name="update_scan_title">选择本地 APK（%1$d 个）</string>
+    <string name="update_url_title">输入 APK 下载链接</string>
+    <string name="update_url_hint">支持 Gitee 仓库文件地址与外站直链（http/https/file://）</string>
+    <string name="update_url_empty">请填写 APK 地址</string>
+    <string name="update_pick_failed">无法读取所选文件</string>
+    <string name="update_start">更新</string>
+    <string name="update_checking">正在更新…</string>
+    <string name="update_downloading">正在下载 %1$s</string>
+    <string name="update_no_update">已是最新版本 %1$s</string>
+    <string name="update_ok">更新完成：%1$s</string>
+    <string name="update_ok_no_relaunch">更新完成：%1$s（未能自动拉回，请手动打开）</string>
+    <string name="update_ok_background">已在后台静默更新：%1$s</string>
+    <string name="update_fail">更新失败：%1$s</string>
+    <string name="update_fail_rolled_back">更新失败：%1$s（已回滚到原版本）</string>
+
+    <string name="update_notice_title">发现新版本</string>
+    <string name="update_notice_new">有新版本可用</string>
+    <string name="update_no_update_short">已是最新版本</string>
+    <!-- 业务 App（源PLUS）支持宿主驱动更新时，检查结果直接交给它自己的更新页 -->
+    <string name="update_pushed_to_app">已推送到源PLUS 更新页</string>
+    <string name="update_window_sub">当前 %1$s → 新版本 %2$s</string>
+    <string name="update_window_sub_current">当前 %1$s</string>
+    <string name="update_window_sub_new">新版本 %1$s</string>
+    <string name="action_update_now">立即更新</string>
+    <string name="action_update_later">稍后</string>
+    <string name="update_push_time">推送时间：%1$s</string>
+    <string name="update_downloading_pct">正在下载 %1$d%%</string>
+    <string name="update_installing_hint">正在安装，完成后会自动回到源PLUS…</string>
+    <string name="update_installing_short">正在安装…</string>
+    <string name="update_notes_fallback">更新说明加载失败，可以直接点「立即更新」。</string>
+    <string name="update_loading">正在准备更新…</string>
+
+    <string name="btn_notif">通知权限</string>
+    <string name="btn_notif_on">通知权限 ✓</string>
+    <string name="notif_settings_fail">没有找到通知使用权设置页</string>
+
+    <!-- 沙箱里没有 app 时的恢复模式（首次运行 / 出 bug 丢包）：直接进入更新页自动安装。
+         ⚠️ 面向用户的文案里**不要出现「业务」这类内部术语**（用户 2026-10-29） -->
+    <string name="update_recover_title">正在初始化应用</string>
+    <string name="update_recover_checking">正在获取最新版本…</string>
+    <string name="action_retry">重试</string>
+
+    <!-- 宿主无障碍服务（系统「无障碍」授权页直接显示这两条，属**面向用户**的文案）。
+         ⚠️ 必须保持中性、不针对某个具体功能（用户 2026-10-29）：
+            · 不出现「沙箱」「业务」等内部术语；
+            · 不点名「手势」这类单一用途 —— 实际用途不止手势，点名既不准确、
+              也让用户觉得这个权限专为某个可疑功能而开。 -->
+    <string name="access_service_desc">为本应用提供系统辅助能力，用于执行常规系统操作。不读取屏幕内容。</string>
+    <string name="access_service_summary">源Plus 辅助服务</string>
+</resources>

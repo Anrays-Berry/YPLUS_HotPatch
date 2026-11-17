@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 宿主无障碍服务配置：只用来执行全局动作（回桌面 / 最近任务 / 返回等），
+     不读取窗口内容、不监听事件，尽量缩小权限面（用户 2026-10-29） -->
+<accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
+    android:description="@string/access_service_desc"
+    android:accessibilityEventTypes="typeAllMask"
+    android:accessibilityFeedbackType="feedbackGeneric"
+    android:canRetrieveWindowContent="false"
+    android:canPerformGestures="true"
+    android:notificationTimeout="100"
+    android:settingsActivity="com.anrays.yplus.MainActivity"
+    android:summary="@string/access_service_summary" />
