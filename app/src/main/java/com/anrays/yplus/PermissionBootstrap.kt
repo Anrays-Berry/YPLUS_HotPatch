@@ -37,7 +37,7 @@ object PermissionBootstrap {
             exec("appops set --uid $uid RECORD_AUDIO allow")
             // 导入 APK 读 /sdcard
             exec("pm grant $pkg android.permission.READ_EXTERNAL_STORAGE")
-            // 蓝牙扫描/连接：沙箱内业务（SourcePlus 的设备管理）按**宿主 UID** 校验，
+            // 蓝牙扫描/连接：沙箱内业务（业务应用的设备管理）按**宿主 UID** 校验，
             // 宿主没授这些权限，沙箱里声明了也扫不到设备。
             // 宿主 targetSdk=28 → Android 12+ 走旧权限模型，关键是定位权限。
             exec("pm grant $pkg android.permission.ACCESS_FINE_LOCATION")

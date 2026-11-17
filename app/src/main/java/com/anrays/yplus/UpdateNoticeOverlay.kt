@@ -21,7 +21,7 @@ import android.widget.TextView
 /**
  * 「发现新版本」右上角提示条（系统 overlay）。
  *
- * 形态对齐源PLUS 的 notice（尺寸比它略小一点）：胶囊圆角、半透底 + 主色描边、左侧圆形云下载
+ * 形态对齐业务应用的 notice（尺寸比它略小一点）：胶囊圆角、半透底 + 主色描边、左侧圆形云下载
  * 图标、标题「发现新版本」+ 副文 vX.Y.Z、右侧关闭；**不自动消失**，用户自己点 ✕ 或点进更新窗口。
  *
  * 🔴 只在本 App 前台显示（用户 2026-10-27 定稿）：
@@ -30,7 +30,7 @@ import android.widget.TextView
  *    这里同样每秒问系统一次：本进程 importance 是不是 FOREGROUND；后台直接移除视图，
  *    pending 留着，回到前台自动再显示。
  *
- * 为什么必须是 overlay：默认入口是**直接进沙箱里的源PLUS**，宿主自己的 Activity 一进去就
+ * 为什么必须是 overlay：默认入口是**直接进沙箱里的业务应用**，宿主自己的 Activity 一进去就
  * `finish()`（见 [MainActivity]），没有视图能承载这条提示；沙箱页面是 `ProxyActivity`，
  * 也没法往它的 decorView 里加 View。
  *

@@ -23,21 +23,21 @@ import java.io.File
 import kotlin.math.abs
 
 /**
- * 「源PLUS ⇄ BlackBox后台」切换按钮。
+ * 「业务应用 ⇄ BlackBox后台」切换按钮。
  *
  * 🔴 显隐规则（用户 2026-10-30 拍板，最终口径）：
  *    · 业务 APK manifest 里有 `frame.consumer = true`（消费端声明）→ **一律不显示**；
  *    · 没有这条声明 → 一律显示（别的沙箱 App 靠它回后台）。
  *
  * 为什么不再用"消费端发命令 → 宿主写标记文件 → 业务进程每秒 stat"：
- *    ① 源PLUS 从进程起来到发命令要几百毫秒，而 launch 动画（系统 starting window，只显示图标）
+ *    ① 业务应用从进程起来到发命令要几百毫秒，而 launch 动画（系统 starting window，只显示图标）
  *       期间按钮（TYPE_APPLICATION_OVERLAY）**已经盖上去了** —— 用户 2026-10-30 报的正是这个；
  *    ② 判定还得跨进程绕一圈。现在改成读业务 APK 的 meta-data，进进程那一刻就成立。
  * 仍然保留两条与声明无关的物理约束：必须真的在前台（2026-10-27「只在前台显示」）、
  * 前台满 [SHOW_DELAY_MS] 才画（把启动动画那 1~2 秒盖掉）。
  *
  * 实现要点（历史坑，别踩回去）：
- * 1. **不能往 Activity 的 decorView 里加 View**：源PLUS 界面是黑盒的 `ProxyActivity$Px`，
+ * 1. **不能往 Activity 的 decorView 里加 View**：业务应用界面是黑盒的 `ProxyActivity$Px`，
  *    走虚拟 WindowManager，加进去点不动 → 只能用系统 overlay。
  * 2. **不能用 Activity 生命周期判断前后台**：沙箱里虚拟 App 有自己的 Activity 栈，
  *    ProxyActivity 会反复 pause/resume（实测 0.2 秒内显示/移除来回切，最后停在"已移除"）。
@@ -91,7 +91,7 @@ object BoxSwitchOverlay {
 
     /**
      * 兼容老业务包发来的 `overlay.setVisible(false)` 命令（宿主 `FrameApiHost.overlayVisible`
-     * 与老 `SourcePlus/core/HostBoxOverlay` 都会调）。
+     * 与老 `业务应用的 core/HostBoxOverlay` 都会调）。
      * 🔴 2026-10-30 起显隐只认 manifest 声明（见 [isConsumerBusiness]），这条命令**不再改变任何行为**，
      *    只留一行日志，便于排查"还有老包在发命令"。
      */
@@ -111,7 +111,7 @@ object BoxSwitchOverlay {
 
     /**
      * 宿主"打开 app"时调用。原来写 3.5 秒抑制文件防宿主进程闪按钮 ——
-     * 现在源PLUS 有 `frame.consumer` 声明（全局一律不显示），其他 App 有前台去抖兜住，不再需要。
+     * 现在业务应用有 `frame.consumer` 声明（全局一律不显示），其他 App 有前台去抖兜住，不再需要。
      */
     @Suppress("UNUSED_PARAMETER")
     fun markLaunchingBusiness(context: Context) {
@@ -194,7 +194,7 @@ object BoxSwitchOverlay {
     private fun show(context: Context) {
         if (view != null) return
         if (!Settings.canDrawOverlays(context)) {
-            Log.w(TAG, "无悬浮窗权限 → 不显示切换按钮（不影响源PLUS）")
+            Log.w(TAG, "无悬浮窗权限 → 不显示切换按钮（不影响业务应用）")
             return
         }
         val manager = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
@@ -211,7 +211,7 @@ object BoxSwitchOverlay {
                 setColor(0xCC1E88E5.toInt())
             }
             alpha = 0.85f
-            contentDescription = "拖动移动，点击切换源PLUS与BlackBox后台"
+            contentDescription = "拖动移动，点击切换业务应用与BlackBox后台"
         }
         val lp = WindowManager.LayoutParams(
             size,
@@ -311,7 +311,7 @@ object BoxSwitchOverlay {
         Log.i(TAG, "按钮已移除（后台）")
     }
 
-    /** 管理界面 → 源PLUS；源PLUS → 管理界面 */
+    /** 管理界面 → 业务应用；业务应用 → 管理界面 */
     private fun toggle(context: Context) {
         if (BoxUiState.boxVisible) {
             BoxUiState.boxVisible = false

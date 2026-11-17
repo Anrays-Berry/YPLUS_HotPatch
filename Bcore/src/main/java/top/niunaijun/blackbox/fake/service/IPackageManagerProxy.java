@@ -251,7 +251,7 @@ public class IPackageManagerProxy extends BinderInvocationStub {
                     .getInstalledApplications(flags, BlackBoxCore.getUserId());
 
             // 🔴 合并宿主真实应用（用户 2026-10-28）：
-            //    沙箱内应用（源Plus）的「应用列表」= 它自己沙盒里的应用 + 读取本机应用。
+            //    沙箱内应用（业务应用）的「应用列表」= 它自己沙盒里的应用 + 读取本机应用。
             //    虚拟 PM 默认只返回沙箱内包，这里把宿主原始 PM 的结果并进来
             //    （同包名以沙箱内为准，避免镜像包被宿主版本覆盖）。
             java.util.LinkedHashMap<String, ApplicationInfo> merged = new java.util.LinkedHashMap<>();

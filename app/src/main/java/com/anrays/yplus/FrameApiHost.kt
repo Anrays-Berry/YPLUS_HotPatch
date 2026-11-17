@@ -115,7 +115,7 @@ object FrameApiHost {
     private fun capabilities(context: Context): JSONObject = JSONObject().apply {
         put("v", FrameApi.VERSION)
         // v2 起 apis = [{name, since}]：消费端不仅能判"有没有"，还能判"这条 api 的哪个参数能用"
-        // （老 v1 消费端读到的是对象数组，必须按 v 切解析方式 —— 源Plus 的 FrameApiClient 已支持两种）
+        // （老 v1 消费端读到的是对象数组，必须按 v 切解析方式 —— 业务应用的 FrameApiClient 已支持两种）
         put("apis", JSONArray().apply {
             FrameApi.CATALOG.forEach { e ->
                 put(JSONObject().put("name", e.name).put("since", e.since))
@@ -368,7 +368,7 @@ object FrameApiHost {
 
     private fun clipboardSet(context: Context, id: String, params: JSONObject) {
         val text = params.optString("text")
-        val label = params.optString("label").ifEmpty { "源Plus" }
+        val label = params.optString("label").ifEmpty { "业务应用" }
         val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
         Handler(Looper.getMainLooper()).post {
             runCatching { cm?.setPrimaryClip(ClipData.newPlainText(label, text)) }
@@ -431,7 +431,7 @@ object FrameApiHost {
         val progress = params.optJSONObject("progress")
         builder
             .setSmallIcon(context.applicationInfo.icon)
-            .setContentTitle(params.optString("title", "源Plus"))
+            .setContentTitle(params.optString("title", "业务应用"))
             .setContentText(params.optString("body"))
             // 固定 id 反复 post = 原地更新，不能再响一次/再弹一次
             .setOnlyAlertOnce(ongoing || progress != null)

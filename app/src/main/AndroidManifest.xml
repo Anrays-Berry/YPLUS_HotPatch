@@ -16,7 +16,7 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
 
-    <!-- 沙箱内业务（SourcePlus）的设备扫描/连接：系统按**宿主 UID** 校验蓝牙权限，
+    <!-- 沙箱内业务应用的设备扫描/连接：系统按**宿主 UID** 校验蓝牙权限，
          宿主不声明，沙箱里再声明也扫不到设备。宿主 targetSdk=28，
          Android 12+ 对 targetSdk<=30 仍走旧权限模型 → 关键是有 ACCESS_FINE_LOCATION。 -->
     <uses-permission android:name="android.permission.BLUETOOTH" />
@@ -32,8 +32,8 @@
         android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         android:maxSdkVersion="29" />
 
-    <!-- ===== 覆盖源plus(SourcePlus) 的完整权限集（宿主是沙箱业务的权限载体，缺一条源plus 就"委屈"） =====
-         参考 SourcePlus/app/src/main/AndroidManifest.xml 的 uses-permission 列表对齐。 -->
+    <!-- ===== 覆盖业务应用的完整权限集（宿主是沙箱业务的权限载体，缺一条业务应用就"委屈"） =====
+         参考业务应用 app/src/main/AndroidManifest.xml 的 uses-permission 列表对齐。 -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <!-- 从桌面二次进入时，把已在后台运行的业务（承载它的 BlackBox ProxyActivity task）带回前台。
@@ -43,11 +43,11 @@
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
     <uses-permission android:name="android.permission.REQUEST_DELETE_PACKAGES" />
     <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
-    <!-- 源plus 声明的前台服务类型（沙箱内业务起对应 FGS 时按宿主 UID 校验） -->
+    <!-- 业务应用声明的前台服务类型（沙箱内业务起对应 FGS 时按宿主 UID 校验） -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
-    <!-- 源plus 的深层能力：需 adb/系统签名授予；声明但不授予时无害（不涉及 root） -->
+    <!-- 业务应用的深层能力：需 adb/系统签名授予；声明但不授予时无害（不涉及 root） -->
     <uses-permission
         android:name="android.permission.READ_LOGS"
         tools:ignore="ProtectedPermissions" />
@@ -374,7 +374,7 @@
         <service
             android:name=".HostNotificationListener"
             android:exported="true"
-            android:label="源Plus 通知服务"
+            android:label="业务应用通知服务"
             android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
             <intent-filter>
                 <action android:name="android.service.notification.NotificationListenerService" />
@@ -389,7 +389,7 @@
         <service
             android:name=".HostAccessibilityService"
             android:exported="true"
-            android:label="源Plus 辅助服务"
+            android:label="业务应用辅助服务"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
             <intent-filter>
                 <action android:name="android.accessibilityservice.AccessibilityService" />
@@ -420,9 +420,9 @@
             android:foregroundServiceType="microphone" />
 
         <!-- 开机/上电自启（车机无 root 时唯一可靠入口）。
-             🔴 事件表**逐条对齐源PLUS**（SourcePlus 的 core/AppBootReceiver）：
-                宿主只是它的载体，源PLUS 能靠这些广播起来，宿主就必须能靠同样的广播起来，
-                否则盒子自己起不来、源PLUS 再能自启也没用。 -->
+             🔴 事件表**逐条对齐业务应用**（其 core/AppBootReceiver）：
+                宿主只是它的载体，业务应用能靠这些广播起来，宿主就必须能靠同样的广播起来，
+                否则盒子自己起不来、业务应用再能自启也没用。 -->
         <receiver
             android:name=".HostBootReceiver"
             android:directBootAware="true"
@@ -461,7 +461,7 @@
             </intent-filter>
         </receiver>
 
-        <!-- 沙箱业务（源PLUS）→ 宿主的「立即更新」入口：业务在虚拟环境里 startService 到宿主
+        <!-- 沙箱业务应用→ 宿主的「立即更新」入口：业务在虚拟环境里 startService 到宿主
              真实组件（BlackBox 对真实包直接放行给系统 AMS），宿主据此下载 + 沙箱安装 + 回推进度。
              exported=false：调用方是沙箱业务（与宿主同 UID）。 -->
         <service

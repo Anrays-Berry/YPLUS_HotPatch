@@ -12,14 +12,14 @@ import java.io.File
 /**
  * 宿主的**调试安装通道**：把 APK 直接装进沙箱（业务包），不用点界面。
  *
- * 为什么需要：业务（源PLUS）跑在沙箱里，盒子里的包没法从外面直接覆盖；
+ * 为什么需要：业务应用跑在沙箱里，盒子里的包没法从外面直接覆盖；
  * 而宿主读 `/sdcard` 会撞分区存储（EACCES）、非 exported 组件 adb 也起不来 ——
  * 于是留这么一条显式广播出口，配合 http 地址下载（下载到宿主 cache，**不需要任何存储权限**）。
  *
  * 用法（PC 上起个静态服务，把 APK 放进去）：
  *   adb shell am broadcast -n com.anrays.yplus/.HostInstallReceiver \
  *        -a com.anrays.yplus.action.INSTALL \
- *        --es url http://192.168.1.10:8000/SourcePlus.apk
+ *        --es url http://192.168.1.10:8000/business.apk
  * 也可以给本机文件（前提宿主有权限读到）：--es path /sdcard/Download/x.apk
  * 额外开关：--ez clear true  → 装前清数据
  *

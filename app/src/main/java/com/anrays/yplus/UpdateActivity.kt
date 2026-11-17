@@ -16,11 +16,11 @@ import com.google.android.material.progressindicator.LinearProgressIndicator
 import java.util.concurrent.Executors
 
 /**
- * 更新内容窗口：形态对齐源PLUS 的更新页 —— 版本行（当前 → 新）+ 更新说明 html（源PLUS 用
+ * 更新内容窗口：形态对齐业务应用的更新页 —— 版本行（当前 → 新）+ 更新说明 html（业务应用用
  * `<iframe src>` 加载，这里用 WebView 承载同一份 html）+ 底部动作按钮。
  *
- * 与源PLUS 唯一的差别：源PLUS 只有「浏览器打开」（去浏览器下 APK），宿主是**直接装**，
- * 所以这里的按钮是「立即更新」——下载、校验、覆盖安装、装完自己把源PLUS 拉回来
+ * 与业务应用唯一的差别：业务应用只有「浏览器打开」（去浏览器下 APK），宿主是**直接装**，
+ * 所以这里的按钮是「立即更新」——下载、校验、覆盖安装、装完自己把业务应用拉回来
  * （见 [HotUpdateManager.install]）。
  */
 class UpdateActivity : AppCompatActivity() {
@@ -385,9 +385,9 @@ class UpdateActivity : AppCompatActivity() {
     }
 
     /**
-     * 「稍后」/ ✕：关掉窗口并**回到源PLUS**。
+     * 「稍后」/ ✕：关掉窗口并**回到业务应用**。
      *
-     * 不能只 `finish()`：从通知横幅进来时是冷启动，源PLUS 可能根本没在跑（或者已经被装包杀掉），
+     * 不能只 `finish()`：从通知横幅进来时是冷启动，业务应用可能根本没在跑（或者已经被装包杀掉），
      * 一 finish 就只剩个空桌面。这里显式把它拉起来 —— 已在后台就只是切到前台。
      */
     private fun dismissToBusiness() {

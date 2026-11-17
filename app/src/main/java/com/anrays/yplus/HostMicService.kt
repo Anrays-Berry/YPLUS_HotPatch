@@ -64,14 +64,14 @@ class HostMicService : Service() {
         val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         if (manager.getNotificationChannel(CHANNEL_ID) == null) {
             manager.createNotificationChannel(
-                NotificationChannel(CHANNEL_ID, "源PLUS 后台服务", NotificationManager.IMPORTANCE_MIN)
+                NotificationChannel(CHANNEL_ID, "业务应用后台服务", NotificationManager.IMPORTANCE_MIN)
             )
         }
     }
 
     private fun buildNotification(): Notification {
         return Notification.Builder(this, CHANNEL_ID)
-            .setContentTitle("源PLUS")
+            .setContentTitle("业务应用")
             .setContentText("沙箱应用后台运行中")
             .setSmallIcon(android.R.drawable.stat_notify_sync_noanim)
             .setOngoing(true)

@@ -5,11 +5,11 @@ import android.content.res.Configuration
 import android.util.Log
 
 /**
- * 原生 UI 密度缩放（参考源PLUS：默认 1.5×，范围 0.8~1.5）。
+ * 原生 UI 密度缩放（参考业务应用：默认 1.5×，范围 0.8~1.5）。
  *
  * 车机常见「系统 density=1（mdpi）但分辨率很高（如 2560×1440）」：按 dp/sp 设计的原生页面
- * 会显得又小又糙。这里把宿主自己的密度整体放大，让 1dp 占更多像素 —— 与源PLUS
- * 用 `dpi.js` 放大网页根字号是同一个意图（源PLUS 默认 120%）。
+ * 会显得又小又糙。这里把宿主自己的密度整体放大，让 1dp 占更多像素 —— 与业务应用
+ * 用 `dpi.js` 放大网页根字号是同一个意图（业务应用默认 120%）。
  *
  * ⚠️ 不能用「直接改 `DisplayMetrics.density`」的方式：Android 在配置更新
  * （[android.content.res.Resources] 的 `updateConfiguration`）时会按

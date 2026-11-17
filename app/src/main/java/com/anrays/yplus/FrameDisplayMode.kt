@@ -6,7 +6,7 @@ import android.view.ViewGroup
 import androidx.core.view.WindowCompat
 
 /**
- * 框架自身的显示样式（参考源PLUS core/DisplayMode.kt 的"标准"做法）。
+ * 框架自身的显示样式（参考业务应用 core/DisplayMode.kt 的"标准"做法）。
  *
  * 关键：**[不能在主题层开](android:fitsSystemWindows)** —— 它会落在 DecorView 上，
  * 在视图树最顶层就把窗口 inset 消费成内边距，导致内容永远画不进系统栏后方，
@@ -19,7 +19,7 @@ import androidx.core.view.WindowCompat
  */
 object FrameDisplayMode {
 
-    /** 标准（参考源PLUS "标准"）：内容视图上下避开系统栏，系统栏黑底。 */
+    /** 标准（参考业务应用 "标准"）：内容视图上下避开系统栏，系统栏黑底。 */
     fun applyStandard(activity: Activity) {
         val window = activity.window ?: return
         WindowCompat.setDecorFitsSystemWindows(window, false)

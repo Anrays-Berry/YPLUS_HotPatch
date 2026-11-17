@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">源PLUS</string>
+    <string name="app_name">YPLUS</string>
     <!-- 后台管理界面的标题（一般人看不到，用户 2026-10-28 定名） -->
     <string name="title">BlackBox后台</string>
     <string name="subtitle">沙箱应用 · 免安装运行</string>
@@ -68,8 +68,8 @@
     <string name="update_notice_title">发现新版本</string>
     <string name="update_notice_new">有新版本可用</string>
     <string name="update_no_update_short">已是最新版本</string>
-    <!-- 业务 App（源PLUS）支持宿主驱动更新时，检查结果直接交给它自己的更新页 -->
-    <string name="update_pushed_to_app">已推送到源PLUS 更新页</string>
+    <!-- 业务 App（业务应用）支持宿主驱动更新时，检查结果直接交给它自己的更新页 -->
+    <string name="update_pushed_to_app">已推送到业务应用更新页</string>
     <string name="update_window_sub">当前 %1$s → 新版本 %2$s</string>
     <string name="update_window_sub_current">当前 %1$s</string>
     <string name="update_window_sub_new">新版本 %1$s</string>
@@ -77,7 +77,7 @@
     <string name="action_update_later">稍后</string>
     <string name="update_push_time">推送时间：%1$s</string>
     <string name="update_downloading_pct">正在下载 %1$d%%</string>
-    <string name="update_installing_hint">正在安装，完成后会自动回到源PLUS…</string>
+    <string name="update_installing_hint">正在安装，完成后会自动回到业务应用…</string>
     <string name="update_installing_short">正在安装…</string>
     <string name="update_notes_fallback">更新说明加载失败，可以直接点「立即更新」。</string>
     <string name="update_loading">正在准备更新…</string>
@@ -98,5 +98,5 @@
             · 不点名「手势」这类单一用途 —— 实际用途不止手势，点名既不准确、
               也让用户觉得这个权限专为某个可疑功能而开。 -->
     <string name="access_service_desc">为本应用提供系统辅助能力，用于执行常规系统操作。不读取屏幕内容。</string>
-    <string name="access_service_summary">源Plus 辅助服务</string>
+    <string name="access_service_summary">业务应用辅助服务</string>
 </resources>

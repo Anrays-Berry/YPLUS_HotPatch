@@ -36,7 +36,7 @@ class CarBoxApp : Application() {
     }
 
     override fun attachBaseContext(base: Context?) {
-        // 原生 UI 密度缩放（参考源PLUS 默认 1.5×）：用 createConfigurationContext 改写 densityDpi，
+        // 原生 UI 密度缩放（参考业务应用默认 1.5×）：用 createConfigurationContext 改写 densityDpi，
         // 让缩放抗配置变更稳定生效；在 BlackBox 注入之前包装，BlackBox 仍以原始 base 工作，互不干扰。
         super.attachBaseContext(base?.let { DpiScale.wrap(it) } ?: base)
         if (base == null) return
@@ -72,13 +72,13 @@ class CarBoxApp : Application() {
         // 装上监听会立刻补一次；进程存活期间由 ContentObserver 秒级捞回（见 HostAccGuard）。
         runCatching { HostAccGuard.install(this) }
             .onFailure { Log.e(TAG, "host acc guard install failed", it) }
-        // 右上角「源PLUS ⇄ 宿主」切换按钮：只在本 App 前台时显示（退到后台自动移除）。
+        // 右上角「业务应用 ⇄ 宿主」切换按钮：只在本 App 前台时显示（退到后台自动移除）。
         // 显隐靠每秒查询本进程 importance，不用 Activity 生命周期 —— 沙箱里 ProxyActivity
         // 的 pause/resume 不受控，按生命周期会把按钮闪没（见 BoxSwitchOverlay 注释）。
         runCatching { BoxSwitchOverlay.start(this) }
             .onFailure { Log.e(TAG, "switch overlay start failed", it) }
 
-        // 60 秒心跳自愈：对齐源PLUS 的 KeepAliveService 心跳，沙箱业务被系统回收后能自己回来
+        // 60 秒心跳自愈：对齐业务应用的 KeepAliveService 心跳，沙箱业务被系统回收后能自己回来
         heartbeatHandler.postDelayed(heartbeat, HEARTBEAT_MS)
         // ⚠️ 业务 APK 热更**不在这里**检查：进程可能是被开机广播/保活脚本拉起来的，
         //    用户并没有在用 App。检查只由「用户主动打开 App」触发，见 HotUpdateManager.checkOnLaunch。
@@ -102,7 +102,7 @@ class CarBoxApp : Application() {
     companion object {
         const val TAG = "CarBox"
 
-        /** 心跳周期，对齐源PLUS 的 KeepAliveService（60 秒一次恢复） */
+        /** 心跳周期，对齐业务应用的 KeepAliveService（60 秒一次恢复） */
         private const val HEARTBEAT_MS = 60_000L
 
         lateinit var instance: CarBoxApp

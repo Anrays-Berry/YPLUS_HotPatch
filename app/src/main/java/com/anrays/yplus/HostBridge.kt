@@ -57,7 +57,7 @@ object HostBridge {
      * 🔴 用户 2026-10-26 明确："拉活还是会把 app 打开到前台" —— 所以这里不走启动 Activity 的
      *    [launchBusiness]，改成「只拉沙箱进程 + 启动业务的前台保活服务」：
      *      · `initProcess` 只创建 `宿主:pN` 桩进程并初始化 ActivityThread，不碰 ActivityStack；
-     *      · `startService` 让业务自己的保活服务（SourcePlus 端 KeepAliveService）跑起来，
+     *      · `startService` 让业务自己的保活服务（业务应用端 KeepAliveService）跑起来，
      *        由它按开关恢复悬浮窗/心跳；服务内部有 `shouldKeepAliveServiceRun` 门控，尊重用户设置。
      * 不复用 [onSystemRebound] 的另一个原因：那条路径有持久化节流，force-stop 前刚重绑过一次
      * 就会被挡掉 —— 而 force-stop 恰恰是最需要恢复的场景。

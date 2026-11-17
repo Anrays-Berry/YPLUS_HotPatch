@@ -4,7 +4,7 @@ plugins {
 }
 
 // ==================== release 签名（本机私有，勿提交） ====================
-// 复用 SourcePlus 的 keystore：keystore.properties + keystore/*.jks 已在 .gitignore 排除。
+// 复用业务应用的 keystore：keystore.properties + keystore/*.jks 已在 .gitignore 排除。
 def keystorePropsFile = rootProject.file('keystore.properties')
 def keystoreProps = new Properties()
 if (keystorePropsFile.exists()) {
@@ -69,7 +69,7 @@ android {
         }
     }
 
-    // 产物命名对齐 YPLUS 格式：<Name>_v<版本>_<yyyyMMdd_HHmm>.apk（前缀 YPLUS，与业务包 SourcePlus 同系命名）
+    // 产物命名对齐 YPLUS 格式：<Name>_v<版本>_<yyyyMMdd_HHmm>.apk（前缀 YPLUS，与业务应用同系命名）
     applicationVariants.configureEach { variant ->
         variant.outputs.configureEach { output ->
             def date = new Date().format('yyyyMMdd_HHmm', TimeZone.getTimeZone('Asia/Hong_Kong'))

@@ -51,7 +51,7 @@ public class IAppOpsManagerProxy extends BinderInvocationStub {
             methodName.startsWith("note") || 
             methodName.startsWith("start")) {
             // 透明透传（用户 2026-10-28）：把虚拟包/UID 换成宿主包/UID 再问真实系统，
-            // 返回的就是框架的真实 appop —— 源plus 用原生 Settings.canDrawOverlays 即得到框架权限。
+            // 返回的就是框架的真实 appop —— 业务应用用原生 Settings.canDrawOverlays 即得到框架权限。
             // （以前无脑 MODE_ALLOWED，导致沙箱里权限查询恒为"已授予"，框架没授权诊断也探测不到。）
             try {
                 if (args != null) {

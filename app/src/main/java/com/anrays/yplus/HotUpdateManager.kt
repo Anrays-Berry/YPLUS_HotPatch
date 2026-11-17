@@ -26,7 +26,7 @@ import java.util.Locale
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
- * 业务 APK（源PLUS）热更。
+ * 业务 APK（业务应用）热更。
  *
  * 判定口径（用户 2026-10-27 最终定稿）：**只看 update.json 里的 `seed`（版本种子）**。
  *   · 种子与上次装成功时记下的不一致 → 更新；一致 → 什么都不做；
@@ -92,14 +92,14 @@ object HotUpdateManager {
 
     /**
      * 打开 App 时的检查节流：5 秒。
-     * 源PLUS 是 30 秒，但那边是页面内自觉行为；这边主人为了测试经常反复开 App，
+     * 业务应用是 30 秒，但那边是页面内自觉行为；这边主人为了测试经常反复开 App，
      * 30 秒会把"改了 seed 再看"挡掉，5 秒既够去重又不影响手感。
      */
     private const val CHECK_THROTTLE_MS = 5_000L
 
     /**
      * 打开 App 后延后多久才去查。
-     * 原来 15 秒是为了避开"业务正在被拉起"的窗口，但实测体感很差（源PLUS 是界面一挂载就查）；
+     * 原来 15 秒是为了避开"业务正在被拉起"的窗口，但实测体感很差（业务应用是界面一挂载就查）；
      * 现在只查不装，不会杀进程，0.8 秒足够让界面先起来。
      */
     private const val LAUNCH_DELAY_MS = 800L
@@ -185,7 +185,7 @@ object HotUpdateManager {
         val firstRunNotesSource: String?,
         /**
          * update.json 里的 `pushTime`（本次推送时间，可空；空时框架/业务更新页都不显示）。
-         * 与源PLUS 前端 updateTimeText 约定的键名一致。
+         * 与业务应用前端 updateTimeText 约定的键名一致。
          */
         val pushTime: String,
         /**
@@ -691,7 +691,7 @@ object HotUpdateManager {
     }
 
     /**
-     * **用户主动打开 App 时**检查热更（对齐源PLUS 的做法：前端 `ui/updateWatch.js` 在界面挂载时
+     * **用户主动打开 App 时**检查热更（对齐业务应用的做法：前端 `ui/updateWatch.js` 在界面挂载时
      * 调一次 `android('checkForUpdate')`，原生侧只有 30 秒节流 + in-flight 去重，不挂开机广播、
      * 不后台轮询）。
      *
@@ -1318,7 +1318,7 @@ object HotUpdateManager {
      * 🔴 用户 2026-10-30："app 不在前台的情况下，不要显示悬浮窗和 Notice"。
      * 只看进程 importance 是不够的：沙箱业务退到后台后，进程仍可能被 BlackBox 标成前台，
      * 提示条就会飘在桌面/别的应用上。这里优先用**顶层界面包名**判定：
-     *   top == 宿主包名（管理界面） 或 top == 业务包名（源PLUS 界面）→ 才算前台；
+     *   top == 宿主包名（管理界面） 或 top == 业务包名（业务应用界面）→ 才算前台；
      *   桌面、别的 App、系统弹窗在顶层 → 一律 false。
      * 拿不到顶层包名（个别 ROM 拒绝 getTasks）时退回 importance 判定，至少不会更差。
      */

@@ -8,7 +8,7 @@ import android.util.Log
 import org.json.JSONObject
 import top.niunaijun.blackbox.BlackBoxCore
 
-// 宿主（宿主）→ 沙箱内业务 App（源PLUS）的「更新数据」通道。
+// 宿主（宿主）→ 沙箱内业务 App（业务应用）的「更新数据」通道。
 //
 // 为什么需要：业务的更新提示（Notice 长条 + 侧栏「更新」入口 + 更新页）本来就是现成的，
 // 而真正的下载/校验/沙箱安装只有宿主会做。于是把宿主查到的「有新版本 / 下载进度 /
@@ -24,10 +24,10 @@ object FrameBusinessLink {
 
     private const val TAG = "FrameBizLink"
 
-    /** 业务 APK 里声明的能力标记（SourcePlus AndroidManifest 同名 meta-data） */
+    /** 业务 APK 里声明的能力标记（业务应用 AndroidManifest 同名 meta-data） */
     private const val API_META = "frame.update.api"
 
-    /** 业务侧接收更新指令的服务（SourcePlus core/FrameUpdateService.kt）。
+    /** 业务侧接收更新指令的服务（业务应用 core/FrameUpdateService.kt）。
      *  类名在业务包名下，故只存后缀、运行时拼 —— 业务 APK 改包名也不用动宿主（用户 2026-10-28）。 */
     private const val BUSINESS_SERVICE_SUFFIX = ".core.FrameUpdateService"
 
@@ -129,7 +129,7 @@ object FrameBusinessLink {
     /**
      * 权限快照：宿主把自己持有的权限状态推给沙箱业务（目前只同步「通知使用权」）。
      * 业务侧据此直接采信，不再去系统设置里猜 —— 因为沙箱里真正的授权在宿主包上。
-     * （用户 2026-10-28：改成"信息传递"，并且源plus 独立运行时有本地回退。）
+     * （用户 2026-10-28：改成"信息传递"，并且业务应用独立运行时有本地回退。）
      */
     /**
      * 把宿主持有的权限快照推给业务（**整包推**，不是一个权限一个字段）。

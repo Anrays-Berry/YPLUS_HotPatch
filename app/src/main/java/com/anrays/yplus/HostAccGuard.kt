@@ -9,13 +9,13 @@ import android.provider.Settings
 import android.util.Log
 
 /**
- * 宿主的**守护进程**（对齐源PLUS「设置 → 应用服务 → 守护进程」那一项，即 `accKeepAlive`）。
+ * 宿主的**守护进程**（对齐业务应用「设置 → 应用服务 → 守护进程」那一项，即 `accKeepAlive`）。
  *
- * 源PLUS 那边守护的是它自己的边缘手势服务，宿主这边守护的是 [HostAccessibilityService] ——
+ * 业务应用那边守护的是它自己的边缘手势服务，宿主这边守护的是 [HostAccessibilityService] ——
  * 沙箱里的业务组件系统根本不认，所有 `performGlobalAction`（回桌面 / 返回 / 最近任务）都得靠
  * 宿主这个真实组件代执行，它一旦被摘掉，业务侧「无障碍=不可用」。
  *
- * 机制（与源PLUS 的 [AccessibilityKeepAlive] 同构，参考 MacroDroid 的
+ * 机制（与业务应用的 [AccessibilityKeepAlive] 同构，参考 MacroDroid 的
  * KeepAccessibilityServicesRunning）：某些 ROM 会在重启 / 系统回收 / 省电策略时把某个
  * 无障碍服务从 `Settings.Secure.enabled_accessibility_services` 里移除，发现不在列表里就用 `:`
  * 拼回去写回，系统随即重新绑定服务。
@@ -67,7 +67,7 @@ object HostAccGuard {
     /**
      * 核心：宿主无障碍被摘除就补回。
      *
-     * 顺序（与源PLUS 一致：先 App 层写、失败再 root）：
+     * 顺序（与业务应用一致：先 App 层写、失败再 root）：
      *   1. `Settings.Secure.putString` —— 需要 WRITE_SECURE_SETTINGS（adb / root `pm grant` 后有）；
      *   2. 抛 SecurityException（没授到权）→ root 执行 `settings put secure`。
      *

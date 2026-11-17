@@ -98,7 +98,7 @@ public class SystemProviderStub extends ClassInvocationStub implements BContentP
 
     /**
      * 通知使用权透传（用户 2026-10-28）：
-     * 沙箱里真正的通知使用权在**宿主包**上，而虚拟应用（如源plus）检查的是**自己的虚拟组件名**，
+     * 沙箱里真正的通知使用权在**宿主包**上，而虚拟应用（如业务应用）检查的是**自己的虚拟组件名**，
      * 导致"框架有权限、业务看不到"。读取 `enabled_notification_listeners` 时，若宿主已启用，
      * 就把该虚拟应用自己声明的 NotificationListenerService 组件也拼进返回值 —— 业务侧无需任何配合。
      * 只认 GET_secure/GET_global/GET_system + 该 key；其它设置一概不碰；任何异常都返回原值。

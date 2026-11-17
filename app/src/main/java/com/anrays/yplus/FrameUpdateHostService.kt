@@ -5,7 +5,7 @@ import android.content.Intent
 import android.os.IBinder
 import android.util.Log
 
-// 业务 App（沙箱里的源PLUS）→ 宿主的命令入口。
+// 业务 App（沙箱里的业务应用）→ 宿主的命令入口。
 //
 // 通道：业务在虚拟环境里 startService 到宿主真实组件时，BlackBox 的 IActivityManagerProxy
 // 在虚拟包管理器里查不到该组件 → 直接放行给真系统 AMS；两者同 UID，非 exported 也能起。
@@ -15,7 +15,7 @@ import android.util.Log
 //                 → 下载（进度实时回推业务更新页）→ 沙箱覆盖安装 → 复活业务 → 报 done/failed；
 //   · dismiss  —— 用户放弃本次更新；
 //   · open_box —— 消费端要求打开宿主的 BlackBox后台界面（DEBUG 页「BlackBox后台」入口）；
-//   · overlay  —— 消费端要求显示/隐藏 ⇄ 悬浮按钮（源PLUS 自己不要，别的 App 默认显示）。
+//   · overlay  —— 消费端要求显示/隐藏 ⇄ 悬浮按钮（业务应用自己不要，别的 App 默认显示）。
 class FrameUpdateHostService : Service() {
 
     override fun onBind(intent: Intent?): IBinder? = null
@@ -36,7 +36,7 @@ class FrameUpdateHostService : Service() {
     }
 
     /**
-     * 消费端（源PLUS）控制 ⇄ 悬浮按钮显隐（用户 2026-10-28）。
+     * 消费端（业务应用）控制 ⇄ 悬浮按钮显隐（用户 2026-10-28）。
      *
      * 正常路径下消费端会用反射直接改**业务进程**里的状态（同进程，立即生效）；
      * 这条 startService 是兜底：主进程里的实例也同步成同一状态，通道日志便于排查。
@@ -119,7 +119,7 @@ class FrameUpdateHostService : Service() {
         const val CMD_INSTALL = "install"
         const val CMD_DISMISS = "dismiss"
 
-        /** 消费端请求进入 BlackBox后台（与 SourcePlus 的 FrameUpdateClient.requestOpenBox 对齐） */
+        /** 消费端请求进入 BlackBox后台（与业务应用的 FrameUpdateClient.requestOpenBox 对齐） */
         const val CMD_OPEN_BOX = "open_box"
 
         /** 消费端控制 ⇄ 悬浮按钮显隐（extra: visible） */

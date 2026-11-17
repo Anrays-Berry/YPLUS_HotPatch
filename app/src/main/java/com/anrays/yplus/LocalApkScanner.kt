@@ -26,7 +26,7 @@ data class LocalApkItem(
  * 目录口径：
  *  · 应用自己的缓存与备份（下载链接、SAF、热更备份都落在这几处）；
  *  · 外部存储的 Download / Documents / 根目录（深度 3，跳过 Android、DCIM、音乐视频等）；
- *  · `Download/SourcePlus` 与 `SourcePlus` 根目录（配置备份、音效库所在的同级目录）。
+ *  · `Download/业务应用` 与 `业务应用` 根目录（配置备份、音效库所在的同级目录）。
  *
  * ⚠️ 宿主 targetSdk=28 → 走 legacy 存储，拿到 READ_EXTERNAL_STORAGE 就能 File 遍历；
  *    没授权时公共目录会 `listFiles() == null`，这里静默跳过（由界面提示去授权/换来源）。
@@ -37,6 +37,9 @@ object LocalApkScanner {
 
     /** 从每个根目录往下最多几层 */
     private const val MAX_DEPTH = 3
+
+    /** 业务 APK 的本地投放目录名（外部存储根目录与 `Download/` 下的同名目录）；可按自己的习惯改 */
+    private const val LOCAL_APK_DIR = "业务应用"
 
     /** 最多收集多少个 APK（再多也没人翻） */
     private const val MAX_FILES = 120
@@ -80,8 +83,8 @@ object LocalApkScanner {
         val ext = Environment.getExternalStorageDirectory()
         roots += Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
         roots += Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS)
-        roots += File(ext, "Download/SourcePlus")
-        roots += File(ext, "SourcePlus")
+        roots += File(ext, "Download/$LOCAL_APK_DIR")
+        roots += File(ext, LOCAL_APK_DIR)
         roots += ext
 
         return roots.filter { runCatching { it.isDirectory }.getOrDefault(false) }
@@ -130,7 +133,7 @@ object LocalApkScanner {
 
         val parts = ArrayList<String>(3)
         parts += sizeText(file.length())
-        // versionName 为空的包（源PLUS 故意留空）用 versionCode 逐位换算，与宿主的版本口径一致
+        // versionName 为空的包（业务应用故意留空）用 versionCode 逐位换算，与宿主的版本口径一致
         HotUpdateManager.versionLabel(archive).takeIf { it.isNotEmpty() }?.let { parts += "v$it" }
         file.parentFile?.absolutePath?.let { parts += it }
         return LocalApkItem(file, label, parts.joinToString(" · "), icon)

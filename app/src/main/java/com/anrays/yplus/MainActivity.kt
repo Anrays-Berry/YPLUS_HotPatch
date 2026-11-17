@@ -49,7 +49,7 @@ class MainActivity : AppCompatActivity() {
     private val main = Handler(Looper.getMainLooper())
     private var busy = false
 
-    /** 管理界面是否已经展示过（默认入口是直接进源PLUS，界面可能从未被创建） */
+    /** 管理界面是否已经展示过（默认入口是直接进业务应用，界面可能从未被创建） */
     private var boxUiShown = false
 
     /** 点了「扫描本地 APK」但还没拿到存储权限：授权回调回来后自动继续扫描 */
@@ -82,14 +82,14 @@ class MainActivity : AppCompatActivity() {
         current = this
         requestMissingPermissions()
         // 业务 APK 热更只在这里触发：用户主动点开 App（或从悬浮按钮切回宿主）才算"在用"，
-        // 对齐源PLUS —— 它的 updateWatch 也是界面挂载时才 android('checkForUpdate')。
+        // 对齐业务应用 —— 它的 updateWatch 也是界面挂载时才 android('checkForUpdate')。
         // 开机广播 / 后台进程启动都不查，避免无人时悄悄覆盖安装把业务进程杀掉。
         runCatching { HotUpdateManager.checkOnLaunch(this) }
             .onFailure { Log.w(CarBoxApp.TAG, "hot update check failed", it) }
-        // 默认入口：**直接进沙箱里的源PLUS**，任何情况下都不显示宿主界面
+        // 默认入口：**直接进沙箱里的业务应用**，任何情况下都不显示宿主界面
         // （用户 2026-10-27）。只有两种情况才展示管理界面：
         //   · 右上角悬浮按钮切换（EXTRA_SHOW_BOX）
-        //   · 文件管理器里「用源PLUS 打开」APK（ACTION_VIEW，要导入）
+        //   · 文件管理器里「用业务应用打开」APK（ACTION_VIEW，要导入）
         if (!shouldShowBoxUi(intent) && enterBusinessDirectly()) return
         showBoxUi()
     }
@@ -99,7 +99,7 @@ class MainActivity : AppCompatActivity() {
         intent?.getBooleanExtra(EXTRA_SHOW_BOX, false) == true || intent?.action == Intent.ACTION_VIEW
 
     /**
-     * 直接进入源PLUS：已装业务包就拉起并结束本界面。
+     * 直接进入业务应用：已装业务包就拉起并结束本界面。
      * @return true 表示已接管（界面不会再显示）；false 表示前置条件不满足（如还没导入业务包）
      */
     private fun enterBusinessDirectly(): Boolean {
@@ -116,12 +116,12 @@ class MainActivity : AppCompatActivity() {
             // 避免 BlackBox 对已运行进程 re-launch 又建一个 Activity 实例导致卡死。
             val resumed = bringBusinessToFront(this, pkg)
             val ok = if (resumed) {
-                Log.i(CarBoxApp.TAG, "默认入口 → 源PLUS 已在运行，带回前台")
+                Log.i(CarBoxApp.TAG, "默认入口 → 业务应用已在运行，带回前台")
                 true
             } else {
                 BoxSwitchOverlay.markLaunchingBusiness(this)
                 BoxRepository.launch(pkg).also {
-                    Log.i(CarBoxApp.TAG, "默认入口 → launchApk 源PLUS ok=$it")
+                    Log.i(CarBoxApp.TAG, "默认入口 → launchApk 业务应用 ok=$it")
                 }
             }
             main.post {
@@ -198,7 +198,7 @@ class MainActivity : AppCompatActivity() {
         if (boxUiShown || isFinishing) return
         boxUiShown = true
         setContentView(R.layout.activity_main)
-        // 标准显示样式（参考源PLUS）：内容视图上下避开系统栏，不跑到通知栏下方
+        // 标准显示样式（参考业务应用）：内容视图上下避开系统栏，不跑到通知栏下方
         FrameDisplayMode.applyStandard(this)
         bindViews()
 
@@ -227,7 +227,7 @@ class MainActivity : AppCompatActivity() {
         // 只能靠 pending 变化回调补刷，否则按钮永远不出现。
         HotUpdateManager.onPendingChanged = { syncUpdateButton() }
         syncUpdateButton()
-        // ACTION_VIEW（用源PLUS 打开 APK）进来时直接导入
+        // ACTION_VIEW（用业务应用打开 APK）进来时直接导入
         handleExternalApk(intent)
 
         BoxUiState.boxVisible = true
@@ -242,7 +242,7 @@ class MainActivity : AppCompatActivity() {
      * 补齐沙箱业务需要的系统权限。
      *
      * 车机上**没有 root**，[PermissionBootstrap] 里那套 su 授权在真机一律失败；
-     * 而沙箱内业务（SourcePlus）扫描/连接车机设备、后台对讲都按**宿主 UID** 校验 ——
+     * 而沙箱内业务应用扫描/连接车机设备、后台对讲都按**宿主 UID** 校验 ——
      * 所以必须在宿主这边真正拿到权限。这里只请求运行时权限（悬浮窗是特殊权限，另行引导）。
      */
     private fun requestMissingPermissions() {
@@ -281,7 +281,7 @@ class MainActivity : AppCompatActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         if (shouldShowBoxUi(intent)) {
-            // 悬浮按钮切换 / 用源PLUS 打开 APK：展示管理界面
+            // 悬浮按钮切换 / 用业务应用打开 APK：展示管理界面
             if (boxUiShown) {
                 handleExternalApk(intent)
                 if (!busy) refresh()
@@ -290,7 +290,7 @@ class MainActivity : AppCompatActivity() {
             }
             return
         }
-        // 桌面图标再次点进来：不显示管理界面，直接退回源PLUS
+        // 桌面图标再次点进来：不显示管理界面，直接退回业务应用
         handleExternalApk(intent)
         Thread({
             val pkg = BoxRepository.singleInstalledPackage()
@@ -309,11 +309,11 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        // 把宿主当前权限状态（通知使用权等）同步给沙箱业务：源plus 直接采信，不用自己猜。
-        // 放在 boxUiShown 早退之前，保证"直接进源PLUS"的默认入口也会推。
+        // 把宿主当前权限状态（通知使用权等）同步给沙箱业务：业务应用直接采信，不用自己猜。
+        // 放在 boxUiShown 早退之前，保证"直接进业务应用"的默认入口也会推。
         runCatching { FrameBusinessLink.pushHostPerms(this) }
             .onFailure { Log.w(CarBoxApp.TAG, "push host perms failed", it) }
-        // 默认入口（直接进源PLUS）时视图从未创建，这里必须提前返回，否则 lateinit 崩溃
+        // 默认入口（直接进业务应用）时视图从未创建，这里必须提前返回，否则 lateinit 崩溃
         if (!boxUiShown) return
         BoxUiState.boxVisible = true
         btnNotif.text = if (hasNotificationAccess()) {
@@ -358,7 +358,7 @@ class MainActivity : AppCompatActivity() {
         private const val KEY_APK_URL = "apk_url"
 
         /**
-         * 当前存活的管理界面（默认入口"直接进源PLUS"时恒为 null —— 那是正常的，
+         * 当前存活的管理界面（默认入口"直接进业务应用"时恒为 null —— 那是正常的，
          * 此时 FrameApi 的权限代申请会退回"打开应用详情页"）。
          */
         @Volatile
@@ -407,7 +407,7 @@ class MainActivity : AppCompatActivity() {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
     }
 
-    /** 文件管理器里点“用源PLUS 打开”时进入的路径 */
+    /** 文件管理器里点“用业务应用打开”时进入的路径 */
     private fun handleExternalApk(intent: Intent?) {
         if (intent == null) return
         if (intent.action != Intent.ACTION_VIEW) return
@@ -425,7 +425,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun refresh() {
-        // ⚠️ 界面可能已被 onDestroy 收掉（默认入口是"直接进源PLUS"，进去就 finish），
+        // ⚠️ 界面可能已被 onDestroy 收掉（默认入口是"直接进业务应用"，进去就 finish），
         //    此时 worker 已 shutdown，延迟的 refresh 再提交会抛 RejectedExecutionException 把进程搞崩。
         if (isFinishing || isDestroyed) return
         runCatching {

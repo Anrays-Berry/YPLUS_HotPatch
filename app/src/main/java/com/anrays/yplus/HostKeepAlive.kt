@@ -16,7 +16,7 @@ import java.util.concurrent.TimeUnit
  * [HostBridge.onSystemRebound]），而这次重绑是**系统行为、时有时无**，所以表现为
  * "有时候宿主复活失败"（用户 2026-10-26 报障）。
  *
- * 本对象的做法与 SourcePlus 端 `AutostartDaemon` 同构：把脚本以 root 写进 /data/local/tmp 常驻，
+ * 本对象的做法与业务应用端 `AutostartDaemon` 同构：把脚本以 root 写进 /data/local/tmp 常驻，
  * 脚本 uid=0，force-stop 只杀宿主 UID 的进程、杀不到它；5 秒轮询 `pidof 宿主包名`，
  * 宿主不在就发一条**显式广播**（`-f 0x20` = FLAG_INCLUDE_STOPPED_PACKAGES，stopped 包也能收到）。
  * 广播只唤醒进程，**不启动任何 Activity**，宿主不会被切到前台；进程起来后由 [ReviveReceiver]
@@ -75,7 +75,7 @@ object HostKeepAlive {
         appendLine("MICTICK=6")
         appendLine("while true; do")
         // ① 无障碍保活（**固定开启，无开关**：宿主是业务载体，无障碍掉了业务就瘫）
-        //    机制同源PLUS 的「守护进程」（MacroDroid 手法）：系统/ROM 把宿主无障碍从
+        //    机制同业务应用的「守护进程」（MacroDroid 手法）：系统/ROM 把宿主无障碍从
         //    enabled_accessibility_services 摘掉后写回，系统随即重新绑定。
         //    跑在宿主进程之外 → 宿主被 force-stop（杀后台）也照样捞回，这是最强的一层。
         appendLine("  ACC=\$(settings get secure enabled_accessibility_services 2>/dev/null)")
@@ -187,7 +187,7 @@ object HostKeepAlive {
 
     /**
      * 尽力执行 shell（root 优先）：依次尝试 `su -c` / `sh -c` / 裸命令。
-     * 输出非空且不含 not found / denied 才认成功 —— 与 SourcePlus 端 `AutostartDaemon.runShell` 一致。
+     * 输出非空且不含 not found / denied 才认成功 —— 与业务应用端 `AutostartDaemon.runShell` 一致。
      */
     internal fun shell(command: String): String? {
         // ⚠️ 用**单引号**包住 su 的参数：命令体里本来就带双引号（`[ -n "$PID" ]`），
